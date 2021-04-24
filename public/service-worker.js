@@ -1,12 +1,15 @@
 const FILES_TO_CACHE = [
-  "/",
   "/index.html",
   "/index.js",
   "/styles.css",
   "/manifest.webmanifest",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
+<<<<<<< HEAD
   // "/db.js"
+=======
+  "/db.js",
+>>>>>>> 1afd21c32ab8a22eecc34e6dfc6b057b48b81e38
 ];
 
 const CACHE_NAME = "static-cache-v2";
@@ -16,11 +19,10 @@ const DATA_CACHE_NAME = "data-cache-v1";
 self.addEventListener("install", function (evt) {
   evt.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log("Your files were pre-cached successfully!");
+      // console.log("Your files were pre-cached successfully!");
       return cache.addAll(FILES_TO_CACHE);
-    })
+    }),
   );
-
   // Skip the "waiting" step in service worker lifecycle
   self.skipWaiting();
 });
