@@ -1,7 +1,10 @@
 const FILES_TO_CACHE = [
+  "/",
   "/index.html",
   "/index.js",
   "/styles.css",
+  "/db.js",
+  // "../routes/api.js",
   "/manifest.webmanifest",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
@@ -11,19 +14,19 @@ const CACHE_NAME = "static-cache-v2";
 const DATA_CACHE_NAME = "data-cache-v1";
 
 // install
-self.addEventListener("install", function (evt) {
+self.addEventListener("install", (evt) => {
   evt.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       // console.log("Your files were pre-cached successfully!");
       return cache.addAll(FILES_TO_CACHE);
-    }),
+    })
   );
   // Skip the "waiting" step in service worker lifecycle
   self.skipWaiting();
 });
 
 // Clear cache upon install
-self.addEventListener("activate", function (evt) {
+self.addEventListener("activate", (evt) => {
   evt.waitUntil(
     caches.keys().then(keyList => {
       return Promise.all(
@@ -42,7 +45,7 @@ self.addEventListener("activate", function (evt) {
 });
 
 // fetch
-self.addEventListener("fetch", function (evt) { // listen to any API call from the frontend
+self.addEventListener("fetch",(evt) => { 
   // cache successful requests to the API
   if (evt.request.url.includes("/api/")) {
     evt.respondWith(
@@ -56,11 +59,12 @@ self.addEventListener("fetch", function (evt) { // listen to any API call from t
 
             return response;
           })
-          .catch(err => {
+          .catch((err) => {
             // Network request failed, try to get it from the cache.
             return cache.match(evt.request);
           });
-      }).catch(err => console.log(err))
+        })
+      .catch(err => console.log(err))
     );
 
     return;
@@ -68,18 +72,21 @@ self.addEventListener("fetch", function (evt) { // listen to any API call from t
 
   // if the request is not for the API, serve static assets using "offline-first" approach.
   // see https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook#cache-falling-back-to-network
+  // use cache first for all other requests for performance
   evt.respondWith(
-    caches.match(evt.request).then(function (cachedAsset) {
-      return cachedAsset || fetch(evt.request);
-    })
-  );
-});
+    caches.match(evt.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
 
-// retrieve assets from cache
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+      // if request is not in cache, make network request and cache the response
+      return caches.open(DATA_CACHE_NAME).then((cache) => {
+        return fetch(evt.request).then((response) => {
+          return cache.put(evt.request, response.clone()).then(() => {
+            return response;
+          });
+        });
+      });
     })
   );
 });
